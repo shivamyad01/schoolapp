@@ -1,71 +1,73 @@
+import { Ionicons } from '@expo/vector-icons';
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  const colors = Colors[colorScheme ?? 'light'];
-
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
       }}
-      tabBar={(props) => <CustomTabBar {...props} colors={colors} />}
+      tabBar={(props) => <CustomTabBar {...props} />}
     >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: 'Dashboard',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'grid' : 'grid-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="courses"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: 'Courses',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'book' : 'book-outline'} size={24} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="school"
+        name="calendar"
         options={{
-          title: 'School',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="graduationcap.fill" color={color} />,
+          title: 'Calendar',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          ),
         }}
       />
     </Tabs>
   );
 }
 
-function CustomTabBar({ state, descriptors, navigation, insets, colors }: BottomTabBarProps & {
-  colors: (typeof Colors)['light'];
-}) {
+function CustomTabBar({ state, descriptors, navigation, insets }: BottomTabBarProps) {
   return (
     <View
       style={[
         styles.tabBarOuter,
         {
-          paddingBottom: Math.max(insets.bottom, 12),
+          paddingBottom: Math.max(insets.bottom, 8),
         },
       ]}
-      pointerEvents="box-none">
-      <View
-        style={[
-          styles.tabBar,
-          {
-            backgroundColor: colors.background,
-            borderColor: colors.icon,
-          },
-        ]}>
+      pointerEvents="box-none"
+    >
+      <View style={styles.tabBar}>
         {state.routes.map((route, index) => {
-          const isFocused = state.index === index;
           const { options } = descriptors[route.key];
+
+          const isFocused = state.index === index;
 
           const label =
             options.tabBarLabel !== undefined
@@ -86,35 +88,7 @@ function CustomTabBar({ state, descriptors, navigation, insets, colors }: Bottom
             }
           };
 
-          const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            });
-          };
-
-          const tintColor = isFocused ? colors.tint : colors.tabIconDefault;
-
-          const renderedLabel = (() => {
-            if (typeof label === 'string') {
-              return (
-                <Text style={[styles.label, { color: tintColor }]} numberOfLines={1}>
-                  {label}
-                </Text>
-              );
-            }
-
-            if (typeof label === 'function') {
-              return label({
-                focused: isFocused,
-                color: tintColor,
-                position: 'below-icon' as any,
-                children: options.title ?? route.name,
-              });
-            }
-
-            return label;
-          })();
+          const tintColor = isFocused ? '#3B82F6' : '#9CA3AF';
 
           return (
             <Pressable
@@ -124,20 +98,27 @@ function CustomTabBar({ state, descriptors, navigation, insets, colors }: Bottom
               accessibilityLabel={options.tabBarAccessibilityLabel}
               testID={options.tabBarButtonTestID}
               onPress={onPress}
-              onLongPress={onLongPress}
               style={styles.tabItem}
-              hitSlop={10}>
+              hitSlop={10}
+            >
               <View style={styles.tabItemInner}>
                 {typeof options.tabBarIcon === 'function'
                   ? options.tabBarIcon({
-                      focused: isFocused,
-                      color: tintColor,
-                      size: 24,
-                    })
+                    focused: isFocused,
+                    color: tintColor,
+                    size: 24,
+                  })
                   : null}
-                <View style={styles.labelWrapper}>
-                  {renderedLabel}
-                </View>
+                <Text
+                  style={[
+                    styles.label,
+                    { color: tintColor },
+                    isFocused && styles.labelActive,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {typeof label === 'string' ? label : route.name}
+                </Text>
               </View>
             </Pressable>
           );
@@ -153,14 +134,24 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   tabBar: {
     flexDirection: 'row',
-    borderRadius: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: 'hidden',
+    paddingTop: 8,
   },
   tabItem: {
     flex: 1,
@@ -168,14 +159,14 @@ const styles = StyleSheet.create({
   tabItemInner: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    gap: 6,
-  },
-  labelWrapper: {
-    minHeight: 16,
+    paddingVertical: 6,
+    gap: 4,
   },
   label: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  labelActive: {
     fontWeight: '600',
   },
 });
